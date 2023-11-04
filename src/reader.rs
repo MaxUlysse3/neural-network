@@ -28,6 +28,12 @@ impl Image {
     pub fn label(&self) -> u8 {
         self.label
     }
+
+    pub fn show(&self) {
+        flo_draw::with_2d_graphics(|| {
+            let canvas = flo_draw::create_drawing_window("toto");
+        });
+    }
 }
 
 impl From<Image> for (Vec<u8>, u8) {
@@ -77,6 +83,7 @@ impl ImageIter {
 impl Iterator for ImageIter {
     type Item = Image;
 
+    #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         match self.data_img.next_chunk::<784>() {
             Err(_) => None,
