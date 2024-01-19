@@ -4,7 +4,8 @@ use std::{
 };
 
 use flo_draw::*;
-use flo_draw::{canvas};
+use flo_draw::binding::BindRef;
+use flo_draw::canvas::*;
 
 pub struct Image {
     image: Vec<u8>,
@@ -31,7 +32,24 @@ impl Image {
 
     pub fn show(&self) {
         flo_draw::with_2d_graphics(|| {
-            let canvas = flo_draw::create_drawing_window("toto");
+            // TODO
+            // let canvas = flo_draw::create_drawing_window(WindowProperties {
+            //     title: BindRef::new("toto"),
+            //     size: BindRef::new(&(280, 280)),
+            //     fullscreen: BindRef::new(&false),
+            //     has_decorations: BindRef::new(&false),
+            //     mouse_pointer: BindRef::new(&true),
+            // });
+            canvas.draw(|gc| {
+                gc.canvas_height(280.0);
+                gc.center_region(0.0, 0.0, 280.0, 280.0);
+
+                gc.new_path();
+                gc.rect(0.0, 0.0, 10.0, 10.0);
+
+                gc.fill_color(Color::Rgba(0.0, 0.0, 0.0, 1.0));
+                gc.fill();
+            });
         });
     }
 }
@@ -55,7 +73,7 @@ pub enum Set {
     Test,
 }
 
-const PATH: &str = "../mnist/{}-{}.idx";
+// const PATH: &str = "../mnist/{}-{}.idx";
 
 type VecIntoIter<T> = <Vec<T> as IntoIterator>::IntoIter;
 pub struct ImageIter {
