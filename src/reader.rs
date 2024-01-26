@@ -32,14 +32,7 @@ impl Image {
 
     pub fn show(&self) {
         flo_draw::with_2d_graphics(|| {
-            // TODO
-            // let canvas = flo_draw::create_drawing_window(WindowProperties {
-            //     title: BindRef::new("toto"),
-            //     size: BindRef::new(&(280, 280)),
-            //     fullscreen: BindRef::new(&false),
-            //     has_decorations: BindRef::new(&false),
-            //     mouse_pointer: BindRef::new(&true),
-            // });
+            let canvas = flo_draw::create_drawing_window("Title");
             canvas.draw(|gc| {
                 gc.canvas_height(280.0);
                 gc.center_region(0.0, 0.0, 280.0, 280.0);
