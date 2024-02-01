@@ -3,8 +3,6 @@ use std::{
     iter,
 };
 
-use flo_draw::canvas::*;
-
 pub struct Image {
     image: Vec<u8>,
     label: u8,
