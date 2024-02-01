@@ -3,8 +3,6 @@ use std::{
     iter,
 };
 
-use flo_draw::*;
-use flo_draw::binding::BindRef;
 use flo_draw::canvas::*;
 
 pub struct Image {
@@ -31,19 +29,21 @@ impl Image {
     }
 
     pub fn show(&self) {
-        flo_draw::with_2d_graphics(|| {
-            let canvas = flo_draw::create_drawing_window("Title");
-            canvas.draw(|gc| {
-                gc.canvas_height(280.0);
-                gc.center_region(0.0, 0.0, 280.0, 280.0);
+        let mut display = String::new();
+        for i in 0..28 {
+            for j in 0..28 {
+                display.push(match self.image[28 * i + j] {
+                    0..=80 => ' ',
+                    81..=120 => '.',
+                    121..=180 => '/',
+                    181..=252 => '$',
+                    253..=255 => '#',
+                });
+            }
+            display.push('\n');
+        }
 
-                gc.new_path();
-                gc.rect(0.0, 0.0, 10.0, 10.0);
-
-                gc.fill_color(Color::Rgba(0.0, 0.0, 0.0, 1.0));
-                gc.fill();
-            });
-        });
+        println!("{}", display);
     }
 }
 
