@@ -68,21 +68,24 @@ impl Network {
 pub struct NetworkBuilder {
     weights: Vec<Array2<f64>>,
     biases: Vec<Array1<f64>>,
+    output_size: usize,
 }
 
 impl NetworkBuilder {
     /// Return a new [`NetworkBuilder`] with no layer.
-    pub fn new() -> Self {
+    pub fn new(input_size: usize) -> Self {
         Self {
             weights: Vec::<_>::new(),
             biases: Vec::<_>::new(),
+            output_size: input_size,
         }
     }
     
     /// Add a layer to the [`NetworkBuilder`] with random weights and biases.
-    pub fn add_layer_random(mut self, input: usize, output: usize) -> Self {
-        self.weights.push(Array2::from_shape_fn((output, input), |(_, _)| <i32 as Into::<f64>>::into(rand::thread_rng().gen_range(0..1000)) / 1000f64));
-        self.biases.push(Array1::from_shape_fn(output, |_| <i32 as Into<f64>>::into(rand::thread_rng().gen_range(0..1000)) / 1000f64));
+    pub fn add_layer_random(mut self, size: usize) -> Self {
+        self.weights.push(Array2::from_shape_fn((size, self.output_size), |(_, _)| <i32 as Into::<f64>>::into(rand::thread_rng().gen_range(0..1000)) / 1000f64));
+        self.biases.push(Array1::from_shape_fn(size, |_| <i32 as Into<f64>>::into(rand::thread_rng().gen_range(0..1000)) / 1000f64));
+        self.output_size = size;
         self
     }
 
