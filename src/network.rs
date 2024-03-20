@@ -45,18 +45,21 @@ impl Network {
         sum
     }
 
-    pub fn backpropagate(&mut self, input: Array1<f64>) -> (Vec<Array2<f64>>, Vec<Array1<f64>>) {
-        // Initialize the gradiant
-        let mut nabla_w = Vec::<Array2<f64>>::new();
-        let mut nabla_b = Vec::<Array1<f64>>::new();
+    pub fn backpropagate(&mut self, input: Array1<f64>, expected: Array1<f64>) -> (Vec<Array2<f64>>, Vec<Array1<f64>>) {
+        // Initialize the deltas
+        let mut delta_w = Vec::<Array2<f64>>::new();
+        let mut delta_b = Vec::<Array1<f64>>::new();
 
         // Get the activations of all layers
-        let acts = self.forward(input);
+        let mut acts = self.forward(input).iter().rev();
 
+        let mut last_acts = acts.next()
         for (weights, biases) in self.weights.iter().rev().zip(self.biases.iter().rev()) {
-            
+            let mut new_acts = acts().next();
+            delta_w.push(Array2::<f64>::from_shape_fn((last_acts.shape(), new_acts.shape()), |i, j| 2 * (last_acts[i] - expected[i]) * ))
+                //TODO
         }
-        // TODO
+        
     }
 
     fn sigma(x: f64) -> f64 {
