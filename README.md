@@ -6,7 +6,7 @@ Essentially backward propagation and stochastic gradient descent.
 # Installing
 
 First install [cargo](https://doc.rust-lang.org/cargo/getting-started/installation.html).
-Then `git clone https://github.com/MaxUlysse3/neural-network.git`.
+Then `git clone https://github.com/MaxUlysse3/neural-network.git` and `cd neural-network`.
 
 ## Mnist database
 
@@ -19,4 +19,4 @@ neural-network/mnist/train-images.idx
 neural-network/mnist/train-labels.idx
 ```
 
-Finally, enter the neural-network folder and `cargo run`.
+Finally, `cargo run`.
