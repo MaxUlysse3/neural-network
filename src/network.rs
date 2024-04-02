@@ -19,14 +19,14 @@ impl Network {
     /// If the [`Network`] doesn't have any layer.
     pub fn forward(&self, input: Array1<f64>) -> Vec<Array1<f64>> {
         if self.weights.len() == 0 {
-            panic!("The Network doesn't habve any layer. Try adding one with 'add_layer_random.");
+            panic!("The Network doesn't have any layer.");
         }
 
         let mut acts = &input;
         let mut to_return: Vec<_> = vec![];
         for (w, b) in self.weights.iter().zip(self.biases.iter()) {
-            eprintln!("{:?}", acts.dim());
-            eprintln!("{:?}", (w.dot(acts)).dim());
+            // eprintln!("{:?}", acts.dim());
+            // eprintln!("{:?}", (w.dot(acts)).dim());
             let mut z = w.dot(acts) + b;
             z.iter_mut().for_each(|x| *x = Self::sigma(*x));
             to_return.push(z);
@@ -45,20 +45,31 @@ impl Network {
         sum
     }
 
-    pub fn backpropagate(&mut self, input: Array1<f64>, expected: Array1<f64>) -> (Vec<Array2<f64>>, Vec<Array1<f64>>) {
-        // Initialize the deltas
-        let mut delta_w = Vec::<Array2<f64>>::new();
-        let mut delta_b = Vec::<Array1<f64>>::new();
+    /// Compute the gradients for one (input, output) pair.
+    pub fn backpropagate(&self, input: Array1<f64>, expected: Array1<f64>) -> (Vec<Array2<f64>>, Vec<Array1<f64>>) {
+        // Initialize the delta
+        // let mut delta = Vec::<Array1<f64>>::new();
+
+        // Initialize the gradient
+        let mut gradient_w = Vec::<Array2<f64>>::new();
+        let mut gradient_b = Vec::<Array1<f64>>::new();
 
         // Get the activations of all layers
-        let mut acts = self.forward(input).iter().rev();
+        let mut acts = self.forward(input).into_iter().enumerate().rev();
 
-        let mut last_acts = acts.next()
-        for (weights, biases) in self.weights.iter().rev().zip(self.biases.iter().rev()) {
-            let mut new_acts = acts().next();
-            delta_w.push(Array2::<f64>::from_shape_fn((last_acts.shape(), new_acts.shape()), |i, j| 2 * (last_acts[i] - expected[i]) * ))
-                //TODO
+        let last_act = acts.next().unwrap().1;
+        let mut last_delta = Array1::<f64>::from_shape_fn(last_act.raw_dim(), |x| (last_act[x] - expected[x]) * last_act[x] * (1.0 - last_act[x]));
+
+        for (idx, act) in acts {
+            gradient_w.push(Array2::<f64>::from_shape_fn((last_delta.len(), act.len()), |(i, j)| last_delta[i] * act[j]));
+            gradient_b.push(last_delta.clone());
+
+            // eprintln!("{:?}", idx + 1);
+            last_delta = self.weights[idx + 1].t().dot(&last_delta).map(|x| Self::sigma_prime(*x));
         }
+
+        (gradient_w, gradient_b)
+
         
     }
 

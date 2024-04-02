@@ -3,6 +3,8 @@ use std::{
     iter,
 };
 
+use serde::de::value;
+
 pub struct Image {
     image: Vec<u8>,
     label: u8,
@@ -56,6 +58,14 @@ impl From<Image> for Vec<u8> {
     #[inline]
     fn from(value: Image) -> Self {
         value.image()
+    }
+}
+
+impl From<Image> for ndarray::Array1<f64> {
+    #[inline]
+    fn from(value: Image) -> Self {
+        let vector: Vec<u8> = value.into();
+        Self::from_shape_fn(vector.len(), |x| vector[x].into())
     }
 }
 
