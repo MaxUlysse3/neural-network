@@ -175,7 +175,7 @@ mod test {
         let w1 = arr2(&[[1.0, 1.0], [-1.0, -1.0], [2.0, -2.0]]);
         let b1 = arr1(&[0.0, -1.0, 1.0]);
 
-        let nb = NetworkBuilder::new().add_layer(w0.clone(), b0.clone())
+        let nb = NetworkBuilder::new(w0.shape()[0]).add_layer(w0.clone(), b0.clone())
                                                           .add_layer(w1.clone(), b1.clone());
         let n = nb.build()?;
 
@@ -186,9 +186,21 @@ mod test {
     }
 
     #[test]
-    #[should_panic(expected = "Layer dimensions did not match")]
-    fn test_new_wrong_dimensions() {
-        let nb = NetworkBuilder::new().add_layer_random(3, 2).add_layer_random(3, 2);
-        nb.build().unwrap();
+    fn test_gradient() {
+        let mut n = NetworkBuilder::new(5).add_layer_random(6).add_layer_random(3).add_layer_random(4).build().unwrap();
+
+        let input: Array1<f64> = vec![0.0, 1.0, 0.5, 0.3, 0.93].into();
+        let expected: Vec<f64> = vec![0.0, 0.0, 1.0, 0.0];
+
+        let out = n.forward(input.clone());
+        let c1 = Network::cost(&(out.last().unwrap().clone().to_vec()), &expected);
+
+        let (gradient_w, gradient_b) = n.backpropagate(input.clone(), expected.clone().into());
+
+        let delta_m = 0.01;
+        for (w, b) in n.weights.iter_mut().zip(n.biases.iter_mut()) {
+            *w = w.clone() + Array2::from_elem(w.raw_dim(), &delta_m);
+            *b = b.clone() + Array1::from_elem(b.raw_dim(), &delta_m);
+        }
     }
 }
