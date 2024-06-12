@@ -192,8 +192,8 @@ mod test {
         let input: Array1<f64> = vec![0.0, 1.0, 0.5, 0.3, 0.93].into();
         let expected: Vec<f64> = vec![0.0, 0.0, 1.0, 0.0];
 
-        let out = n.forward(input.clone());
-        let c1 = Network::cost(&(out.last().unwrap().clone().to_vec()), &expected);
+        let out1 = n.forward(input.clone());
+        let c1 = Network::cost(&(out1.last().unwrap().clone().to_vec()), &expected);
 
         let (gradient_w, gradient_b) = n.backpropagate(input.clone(), expected.clone().into());
 
@@ -202,5 +202,20 @@ mod test {
             *w = w.clone() + Array2::from_elem(w.raw_dim(), &delta_m);
             *b = b.clone() + Array1::from_elem(b.raw_dim(), &delta_m);
         }
+
+        let out2 = n.forward(input.clone());
+        let c2 = Network::cost(&(out2.last().unwrap().clone().to_vec()), &expected);
+
+        let mut product = 0.0;
+
+        gradient_w.into_iter()
+                    .zip(gradient_b.into_iter())
+                    .for_each(|(w, b)| {
+                        w.into_iter().for_each(|weight| product += weight * delta_m);
+                        b.into_iter().for_each(|bias| product += bias * delta_m);
+                    });
+
+        println!("{:?}, {:?}", c2 - c1, product);
+        panic!("");
     }
 }
