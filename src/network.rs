@@ -32,6 +32,7 @@ impl Network {
             to_return.push(z);
             acts = to_return.last().unwrap();
         }
+        to_return.insert(0, input);
 
         to_return
     }
@@ -56,6 +57,7 @@ impl Network {
 
         // Get the activations of all layers
         let mut acts = self.forward(input).into_iter().enumerate().rev();
+        // println!("{:?}", acts.len());
 
         let last_act = acts.next().unwrap().1;
         let mut last_delta = Array1::<f64>::from_shape_fn(last_act.raw_dim(), |x| (last_act[x] - expected[x]) * last_act[x] * (1.0 - last_act[x]));
@@ -65,8 +67,9 @@ impl Network {
             gradient_b.push(last_delta.clone());
 
             // eprintln!("{:?}", idx + 1);
-            last_delta = self.weights[idx + 1].t().dot(&last_delta).map(|x| Self::sigma_prime(*x));
+            last_delta = self.weights[idx].t().dot(&last_delta).map(|x| Self::sigma_prime(*x));
         }
+        // println!("{:?}", gradient_w.len());
 
         (gradient_w, gradient_b)
 
@@ -185,37 +188,125 @@ mod test {
         Ok(())
     }
 
-    #[test]
-    fn test_gradient() {
-        let mut n = NetworkBuilder::new(5).add_layer_random(6).add_layer_random(3).add_layer_random(4).build().unwrap();
+    mod cut_square {
+        use ndarray::{Array2, Array1};
+        use rand::Rng;
 
-        let input: Array1<f64> = vec![0.0, 1.0, 0.5, 0.3, 0.93].into();
-        let expected: Vec<f64> = vec![0.0, 0.0, 1.0, 0.0];
+        const SLOPE: f64 = 2.0;
+        const H: f64 = 0.3;
 
-        let out1 = n.forward(input.clone());
-        let c1 = Network::cost(&(out1.last().unwrap().clone().to_vec()), &expected);
+        fn predicate(x: f64, y: f64) -> bool {
+            let line = |x: f64| SLOPE * x + H;
 
-        let (gradient_w, gradient_b) = n.backpropagate(input.clone(), expected.clone().into());
-
-        let delta_m = 0.01;
-        for (w, b) in n.weights.iter_mut().zip(n.biases.iter_mut()) {
-            *w = w.clone() + Array2::from_elem(w.raw_dim(), &delta_m);
-            *b = b.clone() + Array1::from_elem(b.raw_dim(), &delta_m);
+            line(x) > y
         }
 
-        let out2 = n.forward(input.clone());
-        let c2 = Network::cost(&(out2.last().unwrap().clone().to_vec()), &expected);
+        pub fn gen_vals() -> (Vec<f64>, Vec<f64>) {
+            let x = rand::thread_rng().gen_range(0..1000) as f64 / 1000f64;
+            let y = rand::thread_rng().gen_range(0..1000) as f64 / 1000f64;
 
-        let mut product = 0.0;
+            let out = match predicate(x, y) {
+                true => vec![1.0, 0.0],
+                false => vec![0.0, 1.0],
+            };
 
-        gradient_w.into_iter()
-                    .zip(gradient_b.into_iter())
-                    .for_each(|(w, b)| {
-                        w.into_iter().for_each(|weight| product += weight * delta_m);
-                        b.into_iter().for_each(|bias| product += bias * delta_m);
-                    });
+            (vec![x, y], out)
+        }
 
-        println!("{:?}, {:?}", c2 - c1, product);
-        panic!("");
+        pub fn gen_network() -> super::Network {
+            super::NetworkBuilder::new(2).add_layer_random(2).add_layer_random(2).build().unwrap()
+        }
+
+        pub fn cost(network: &super::Network) -> f64 {
+            let mut cost = 0.0;
+            let n = 10000;
+
+            for _ in 0..n {
+                let (input, target) = gen_vals();
+                let out = network.forward(input.into()).last().unwrap().to_vec();
+                cost += super::Network::cost(&out, &target)
+            }
+
+            cost / n as f64
+        }
+
+        pub fn gradient(network: &super::Network) -> (Vec<Array2<f64>>, Vec<Array1<f64>>) {
+            let (input, target) = gen_vals();
+            let (mut gradient_w, mut gradient_b) = network.backpropagate(input.into(), target.into());
+            println!("{:?}", gradient_w.len());
+            let n = 10000;
+
+            for _ in 0..n {
+                let (input, target) = gen_vals();
+                let (new_gradient_w, new_gradient_b) = network.backpropagate(input.into(), target.into());
+                for (gw, ngw) in gradient_w.iter_mut().zip(new_gradient_w.iter()) {
+                    *gw += ngw;
+                }
+
+                for (gb, ngb) in gradient_b.iter_mut().zip(new_gradient_b.iter()) {
+                    *gb += ngb;
+                }
+            }
+
+            for gw in gradient_w.iter_mut() {
+                gw.iter_mut().for_each(|x| *x = *x / n as f64);
+            }
+            for gb in gradient_b.iter_mut() {
+                gb.iter_mut().for_each(|x| *x = *x / n as f64);
+            }
+
+            (gradient_w, gradient_b)
+        }
+
+    }
+
+    // #[test]
+    // fn test_gradient() {
+    //     let mut n = cut_square::gen_network();
+
+    //     let c1 = cut_square::cost(&n);
+
+    //     let (gradient_w, gradient_b) = cut_square::gradient(&n);
+
+    //     let delta_m = 0.1;
+    //     for (w, b) in n.weights.iter_mut().zip(n.biases.iter_mut()) {
+    //         *w = w.clone() + Array2::from_elem(w.raw_dim(), &delta_m);
+    //         *b = b.clone() + Array1::from_elem(b.raw_dim(), &delta_m);
+    //     }
+
+    //     let c2 = cut_square::cost(&n);
+
+    //     let mut product = 0.0;
+
+    //     gradient_w.into_iter()
+    //                 .zip(gradient_b.into_iter())
+    //                 .for_each(|(w, b)| {
+    //                     w.into_iter().for_each(|weight| product += weight * delta_m);
+    //                     b.into_iter().for_each(|bias| product += bias * delta_m);
+    //                 });
+
+    //     println!("{:?}, {:?}", c2 - c1, product);
+    //     panic!("");
+    // }
+
+    #[test]
+    fn test_gradient() {
+        let mut n = cut_square::gen_network();
+
+        let c1 = cut_square::cost(&n);
+
+        let (gradient_w, gradient_b) = cut_square::gradient(&n);
+
+        println!("{:?}", gradient_w.len());
+
+        for (idx, (w, b)) in n.weights.iter_mut().zip(n.biases.iter_mut()).enumerate() {
+            *w = &*w - &gradient_w[idx];
+            *b = &*b - &gradient_b[idx];
+        }
+
+        let c2 = cut_square::cost(&n);
+
+        println!("{:?} -> {:?}", c1, c2 - c1);
+        assert!(c2 - c1 < 0f64);
     }
 }
