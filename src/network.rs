@@ -76,6 +76,25 @@ impl Network {
         
     }
 
+    /// Find the gradients for multiple (inputs, outputs) pair.
+    pub fn find_gradient<I>(&self, iterator: &mut I, num_iter: usize) -> (Vec<Array2<f64>>, Vec<Array1<f64>>) where
+        I: Iterator<Item = (Array1<f64>, Array1<f64>)> {
+        let (input, target) = iterator.next().unwrap();
+        let (mut gradient_w, mut gradient_b) = self.backpropagate(input, target);
+        for (_, (input, target)) in (0..num_iter-1).zip(iterator) {
+            let (gws, gbs) = self.backpropagate(input, target);
+            println!("{:#?}, {:#?}", gws.len(), gbs.len());
+            for (i, gw) in gradient_w.iter_mut().enumerate() {
+                println!("{:?}, {:?}", gw.raw_dim(), gws[i].raw_dim());
+                *gw += gws[i];
+            }
+            // for (i, gb) in gradient_b.iter_mut().enumerate() {
+            //     *gb += gbs[i];
+            // }
+        }
+        (gradient_w, gradient_b)
+    }
+
     fn sigma(x: f64) -> f64 {
         1f64 / (1.0 + libm::exp(-x))
     }

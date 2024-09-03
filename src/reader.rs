@@ -69,6 +69,18 @@ impl From<Image> for ndarray::Array1<f64> {
     }
 }
 
+impl From<Image> for (ndarray::Array1<f64>, ndarray::Array1<f64>) {
+    #[inline]
+    fn from(value: Image) -> Self {
+        let mut target = vec![0, 1, 2, 3, 4, 5, 6 ,7 ,8 ,9];
+        for i in target.iter_mut() {
+            *i = if *i == value.label {1} else {0};
+        }
+        let vector: Vec<u8> = value.image;
+        (ndarray::Array1::from_shape_fn(vector.len(), |x| vector[x].into()), ndarray::Array1::from_shape_fn(target.len(), |x| target[x].into()))
+    }
+}
+
 pub enum Set {
     Train,
     Test,
