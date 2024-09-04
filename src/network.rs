@@ -83,16 +83,23 @@ impl Network {
         let (mut gradient_w, mut gradient_b) = self.backpropagate(input, target);
         for (_, (input, target)) in (0..num_iter-1).zip(iterator) {
             let (gws, gbs) = self.backpropagate(input, target);
-            println!("{:#?}, {:#?}", gws.len(), gbs.len());
+            // println!("{:#?}, {:#?}", gws.len(), gbs.len());
             for (i, gw) in gradient_w.iter_mut().enumerate() {
-                println!("{:?}, {:?}", gw.raw_dim(), gws[i].raw_dim());
-                *gw += gws[i];
+                // println!("{:?}, {:?}", gw.raw_dim(), gws[i].raw_dim());
+                gw.iter_mut().zip(gws[i].iter()).for_each(|(x, y)| *x += y);
             }
-            // for (i, gb) in gradient_b.iter_mut().enumerate() {
-            //     *gb += gbs[i];
-            // }
+            for (i, gb) in gradient_b.iter_mut().enumerate() {
+                gb.iter_mut().zip(gbs[i].iter()).for_each(|(x, y)| *x += y);
+            }
+        }
+        for (gws, gbs) in (gradient_w, gradient_b) {
+            // TODO
         }
         (gradient_w, gradient_b)
+    }
+
+    pub fn learn<I>(&mut self, iterator: &mut I, num_iter: usize, learn_num: usize) {
+        
     }
 
     fn sigma(x: f64) -> f64 {
@@ -252,7 +259,7 @@ mod test {
         pub fn gradient(network: &super::Network) -> (Vec<Array2<f64>>, Vec<Array1<f64>>) {
             let (input, target) = gen_vals();
             let (mut gradient_w, mut gradient_b) = network.backpropagate(input.into(), target.into());
-            println!("{:?}", gradient_w.len());
+            // println!("{:?}", gradient_w.len());
             let n = 10000;
 
             for _ in 0..n {
@@ -316,7 +323,7 @@ mod test {
 
         let (gradient_w, gradient_b) = cut_square::gradient(&n);
 
-        println!("{:?}", gradient_w.len());
+        // println!("{:?}", gradient_w.len());
 
         for (idx, (w, b)) in n.weights.iter_mut().zip(n.biases.iter_mut()).enumerate() {
             *w = &*w - &gradient_w[idx];
@@ -325,7 +332,7 @@ mod test {
 
         let c2 = cut_square::cost(&n);
 
-        println!("{:?} -> {:?}", c1, c2 - c1);
+        // println!("{:?} -> {:?}", c1, c2 - c1);
         assert!(c2 - c1 < 0f64);
     }
 }
